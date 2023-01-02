@@ -19,6 +19,8 @@ import androidx.core.content.ContextCompat;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.os.Build;
 import android.util.Log;
 import android.os.AsyncTask;
@@ -328,7 +330,7 @@ public class BlueThermalPrinterPlugin implements FlutterPlugin, ActivityAware,Me
       case "printImage":
         if (arguments.containsKey("pathImage")) {
           String pathImage = (String) arguments.get("pathImage");
-          printImage(result, pathImage);
+          printImage(result, pathImage, 0);
         } else {
           result.error("invalid_argument", "argument 'pathImage' not found", null);
         }
@@ -857,7 +859,7 @@ public class BlueThermalPrinterPlugin implements FlutterPlugin, ActivityAware,Me
     }
   }
 
-  private void printImage(Result result, String pathImage) {
+  private void printImage(Result result, String pathImage, int padding) {
     if (THREAD == null) {
       result.error("write_error", "not connected", null);
       return;
@@ -865,7 +867,12 @@ public class BlueThermalPrinterPlugin implements FlutterPlugin, ActivityAware,Me
     try {
       Bitmap bmp = BitmapFactory.decodeFile(pathImage);
       if (bmp != null) {
-        byte[] command = Utils.decodeBitmap(bmp);
+        Bitmap outputBitmap = Bitmap.createBitmap(bmp.getWidth() + padding, bmp.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(outputBitmap);
+        canvas.drawColor(Color.WHITE);
+        canvas.drawBitmap(bmp, padding, 0, null);
+        byte[] command = Utils.decodeBitmap(outputBitmap);
+
         THREAD.write(PrinterCommands.ESC_ALIGN_CENTER);
         THREAD.write(command);
       } else {
